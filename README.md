@@ -87,3 +87,27 @@ While not directly served by NGINX, for simplicity I have placed it in the `/var
 This directory should also include a `data` directory which is mounted as a volume in the compose file.
 
 To update and run the application, run `docker compose pull && docker compose up -d`. The application is configured to run on port 5006.
+
+Actual Budget is running on the `budget.matthewherman.net` subdomain. To do that I had to add the following to `/etc/nginx/sites-available/budget.matthewherman.net` and symlink it from `/etc/nginx/sites-enabled/budget.matthewherman.net`:
+```
+server {
+
+        root /var/www/your_domain/html;
+        index index.html index.htm index.nginx-debian.html;
+
+        server_name budget.matthewherman.net;
+
+        location / {
+                proxy_pass              http://127.0.0.1:5006;
+                proxy_http_version      1.1;
+                proxy_set_header        Upgrade $http_upgrade;
+                proxy_set_header        Connection keep-alive;
+                proxy_set_header        Host $host;
+                proxy_cache_bypass      $http_upgrade;
+                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header        X-Forwarded-Proto $scheme;
+        }
+}
+```
+
+I then followed the same Certbot setup above for the subdomain to get a certificate provisioned which automatically updates the configuration above to include HTTPS.
